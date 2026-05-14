@@ -20,19 +20,17 @@ def gerar_qr():
     formato_imagem = formato_var.get()
 
     if link and validar_url(link):
-        # Configura as opções da janela "Salvar Como..."
         extensao = f".{formato_imagem.lower()}"
         tipos_arquivo = [(f"Imagem {formato_imagem.upper()}", f"*{extensao}")]
         
-        # Abre a janela para o usuário escolher onde salvar e o nome do arquivo
+    
         caminho_arquivo = filedialog.asksaveasfilename(
             title="Salvar QR Code como...",
             defaultextension=extensao,
             filetypes=tipos_arquivo,
-            initialfile="qrcode" # Nome sugerido por padrão
+            initialfile="qrcode" 
         )
 
-        # Se o usuário fechar a janela de salvar sem escolher nada, cancela a operação
         if not caminho_arquivo:
             return
 

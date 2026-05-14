@@ -1,0 +1,100 @@
+import qrcode
+import os
+import re
+from tkinter import Tk, Label, Entry, Button, messagebox, StringVar, OptionMenu, filedialog
+from PIL import ImageTk, Image
+
+def validar_url(url):
+    regex = re.compile(
+        r'^(?:http|ftp)s?://'
+        r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|'
+        r'localhost|'
+        r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}|'
+        r'\[?[A-F0-9]*:[A-F0-9:]+\]?)'
+        r'(?::\d+)?'
+        r'(?:/?|[/?]\S+)$', re.IGNORECASE)
+    return re.match(regex, url) is not None
+
+def gerar_qr():
+    link = entry_link.get()
+    formato_imagem = formato_var.get()
+
+    if link and validar_url(link):
+        # Configura as opções da janela "Salvar Como..."
+        extensao = f".{formato_imagem.lower()}"
+        tipos_arquivo = [(f"Imagem {formato_imagem.upper()}", f"*{extensao}")]
+        
+        # Abre a janela para o usuário escolher onde salvar e o nome do arquivo
+        caminho_arquivo = filedialog.asksaveasfilename(
+            title="Salvar QR Code como...",
+            defaultextension=extensao,
+            filetypes=tipos_arquivo,
+            initialfile="qrcode" # Nome sugerido por padrão
+        )
+
+        # Se o usuário fechar a janela de salvar sem escolher nada, cancela a operação
+        if not caminho_arquivo:
+            return
+
+        # Gera o QR Code
+        qr = qrcode.QRCode(version=1, box_size=10, border=5)
+        qr.add_data(link)
+        qr.make(fit=True)
+
+        img = qr.make_image(fill='black', back_color='white')
+        img = img.convert('RGB')
+
+        if formato_imagem.lower() == 'jpeg':
+            formato_salvar = 'JPEG'
+        else:
+            formato_salvar = formato_imagem.upper()
+
+        # Salva o arquivo no caminho escolhido
+        img.save(caminho_arquivo, formato_salvar)
+
+        # Exibe na interface
+        img_aberta = Image.open(caminho_arquivo)
+        img_aberta = img_aberta.resize((250, 250), Image.Resampling.LANCZOS)
+        img_tk = ImageTk.PhotoImage(img_aberta)
+
+        label_img.config(image=img_tk)
+        label_img.image = img_tk
+        messagebox.showinfo("Sucesso", f"QR Code gerado com sucesso!\nSalvo em: {caminho_arquivo}")
+    else:
+        messagebox.showwarning("Atenção", "Insira um link válido.")
+
+def recarregar_interface():
+    entry_link.delete(0, 'end')  
+    label_img.config(image='')
+    label_img.image = None
+
+# tkinter
+root = Tk()
+root.title("Gerador QR Code")
+
+label = Label(root, text="Insira o link:")
+label.pack(pady=10)
+
+entry_link = Entry(root, width=40)
+entry_link.pack(pady=10)
+
+formato_var = StringVar(root)
+formato_var.set("jpeg")  # valor padrão
+
+label_formato = Label(root, text="Escolha o formato da imagem:")
+label_formato.pack(pady=10)
+
+opcoes_formato = ["jpeg", "png"]
+opcao_menu = OptionMenu(root, formato_var, *opcoes_formato)
+opcao_menu.pack(pady=10)
+
+button_gerar = Button(root, text="GERAR", command=gerar_qr)
+button_gerar.pack(pady=10)
+
+button_recarregar = Button(root, text="LIMPAR", command=recarregar_interface)
+button_recarregar.pack(pady=10)
+
+label_img = Label(root)
+label_img.pack(pady=10)
+
+root.mainloop()
